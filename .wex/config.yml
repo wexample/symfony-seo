@@ -1,0 +1,7 @@
+domain: symfony-seo.wex
+global:
+  name: symfony-seo
+  type: php-package
+  version: 1.0.0
+wex:
+  version: 6.0.136
