@@ -1,0 +1,3 @@
+wexample_symfony_seo_controllers:
+  resource: "../../Controller/"
+  type: attribute

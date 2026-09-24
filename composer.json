@@ -1,11 +1,46 @@
 {
   "name": "wexample/symfony-seo",
+  "description": "Search engine facing endpoints for Symfony, composed by the installed bundles",
   "version": "1.0.1",
   "type": "library",
   "license": "MIT",
   "autoload": {
     "psr-4": {
       "Wexample\\SymfonySeo\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Wexample\\SymfonySeo\\Tests\\": "tests/"
+    }
+  },
+  "authors": [
+    {
+      "name": "weeger",
+      "email": "romain.weeger@wexample.com"
+    }
+  ],
+  "require": {
+    "php": ">=8.5",
+    "wexample/symfony-helpers": ">=10.0.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "*",
+    "wexample/symfony-testing": ">=2.0.0",
+    "symfony/browser-kit": "^7.4"
+  },
+  "repositories": [
+    {
+      "type": "path",
+      "url": "../*",
+      "options": {
+        "symlink": true
+      }
+    }
+  ],
+  "extra": {
+    "install": {
+      "bundle_env": "all"
     }
   }
 }

@@ -1,0 +1,22 @@
+framework:
+  test: true
+  secret: "test"
+
+wexample_symfony_seo:
+  robots:
+    sitemaps:
+      - 'https://example.com/sitemap.xml'
+    extra: 'Crawl-delay: 10'
+
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: true
+
+  Wexample\SymfonySeo\Tests\Fixtures\Robots\:
+    resource: '../../Robots/'
+
+doctrine:
+  orm:
+    enable_native_lazy_objects: true
