@@ -33,6 +33,18 @@ class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+                ->arrayNode('favicon')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')
+                            ->defaultTrue()
+                        ->end()
+                        // Null serves the neutral icon shipped with the bundle.
+                        ->scalarNode('path')
+                            ->defaultNull()
+                        ->end()
+                    ->end()
+                ->end()
             ->end();
 
         return $treeBuilder;
