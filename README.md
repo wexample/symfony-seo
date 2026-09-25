@@ -1,6 +1,6 @@
 # symfony-seo
 
-Version: 3.0.0
+Version: 4.0.0
 
 Search engine facing endpoints for Symfony, composed by the installed bundles
 
@@ -26,7 +26,7 @@ Visit the [Wexample Suite documentation](https://docs.wexample.com) for the comp
 ## Dependencies
 
 - php: >=8.5
-- wexample/symfony-helpers: >=10.0.0
+- wexample/symfony-helpers: >=11.0.0
 
 ## Versioning & Compatibility Policy
 
