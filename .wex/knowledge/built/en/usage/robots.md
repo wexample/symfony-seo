@@ -55,10 +55,10 @@ wexample_symfony_seo:
       Crawl-delay: 10
 ```
 
-- `disallow_all` is meant for staging environments, which get indexed because nobody thought of them. It overrides providers, `extra` and `sitemaps` alike; set it in `config/packages/<env>/` rather than deploying a different file per environment.
+- `disallow_all` is meant for staging environments, which get indexed because nobody thought of them, and for apps behind a sign-in. It overrides providers, `extra` and `sitemaps` alike; set it in `config/packages/<env>/` rather than deploying a different file per environment. It also adds `<meta name="robots" content="noindex, nofollow">` to every page's head (see below).
 - `extra` is written as is after the user-agent blocks.
 - `sitemaps` are global lines, tied to no user-agent, and close the file.
 
 ## What it does not do
 
-`robots.txt` only says "do not crawl", never "do not index", and only polite crawlers read it. A URL disallowed here may still show up in results if it is linked from elsewhere. Keeping a page out of the index takes an `X-Robots-Tag: noindex` header on its response.
+`robots.txt` only says "do not crawl", never "do not index", and only polite crawlers read it. A URL disallowed here may still show up in results if it is linked from elsewhere. Keeping a page out of the index takes the page itself saying so: with `disallow_all`, every page rendered by symfony-loader carries `<meta name="robots" content="noindex, nofollow">` in its head (`RobotsMetaProvider`, through `HeadMetaProviderInterface`). Files that are not pages — a PDF, an image — would still need an `X-Robots-Tag: noindex` header.
