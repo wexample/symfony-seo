@@ -3,6 +3,7 @@
 namespace Wexample\SymfonySeo\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
+use Wexample\SymfonyHelpers\Interface\PathLocalizerInterface;
 use Wexample\SymfonySeo\Service\RobotsService;
 use Wexample\SymfonySeo\Tests\Fixtures\Robots\PrivateRobotsProvider;
 use Wexample\SymfonySeo\Tests\Fixtures\Robots\SilentRobotsProvider;
@@ -83,11 +84,32 @@ class RobotsServiceTest extends TestCase
         $this->assertFalse($service->isDisallowed('/no-google/page'));
     }
 
+    public function testRulesFollowThePathsTheAppActuallyServes(): void
+    {
+        // What symfony-translations does: every path under each language.
+        $localizer = new class implements PathLocalizerInterface {
+            public function localizePath(string $path): array
+            {
+                return ['/en'.$path, '/fr'.$path];
+            }
+        };
+
+        $service = $this->createService([new TunnelRobotsProvider()], localizers: [$localizer]);
+
+        $this->assertSame(
+            "User-agent: *\nDisallow: /en/tunnel/\nDisallow: /fr/tunnel/\n",
+            $service->buildBody()
+        );
+        $this->assertTrue($service->isDisallowed('/fr/tunnel/step'));
+        $this->assertFalse($service->isDisallowed('/tunnel/step'));
+    }
+
     private function createService(
         array $providers,
         bool $disallowAll = false,
         array $sitemaps = [],
         string $extra = '',
+        array $localizers = [],
     ): RobotsService {
         return new RobotsService(
             providers: $providers,
@@ -95,6 +117,7 @@ class RobotsServiceTest extends TestCase
             disallowAll: $disallowAll,
             sitemaps: $sitemaps,
             extra: $extra,
+            localizers: $localizers,
         );
     }
 }

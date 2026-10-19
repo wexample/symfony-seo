@@ -3,6 +3,7 @@
 namespace Wexample\SymfonySeo\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Wexample\SymfonyHelpers\Interface\PathLocalizerInterface;
 use Wexample\SymfonyHelpers\DependencyInjection\AbstractWexampleSymfonyExtension;
 use Wexample\SymfonySeo\Interface\RobotsProviderInterface;
 use Wexample\SymfonySeo\Service\RobotsService;
@@ -37,6 +38,11 @@ class WexampleSymfonySeoExtension extends AbstractWexampleSymfonyExtension
         $container
             ->registerForAutoconfiguration(RobotsProviderInterface::class)
             ->addTag(RobotsService::TAG_PROVIDER);
+        // Implemented by symfony-translations, when installed: the paths of the
+        // rules follow the language prefix of the urls.
+        $container
+            ->registerForAutoconfiguration(PathLocalizerInterface::class)
+            ->addTag(PathLocalizerInterface::TAG);
 
         $config = $this->processConfiguration(
             new Configuration(),

@@ -4,6 +4,7 @@ namespace Wexample\SymfonySeo\Service;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
+use Wexample\SymfonyHelpers\Interface\PathLocalizerInterface;
 use Wexample\SymfonySeo\Class\RobotsRule;
 use Wexample\SymfonySeo\DependencyInjection\WexampleSymfonySeoExtension;
 use Wexample\SymfonySeo\Interface\RobotsProviderInterface;
@@ -15,6 +16,10 @@ class RobotsService
     /**
      * @param iterable<RobotsProviderInterface> $providers
      * @param string[] $sitemaps
+     * @param iterable<PathLocalizerInterface> $localizers where the paths the
+     *                                                     providers write are
+     *                                                     actually served — under
+     *                                                     each language's prefix
      */
     public function __construct(
         #[AutowireIterator(self::TAG_PROVIDER)]
@@ -27,6 +32,8 @@ class RobotsService
         private readonly array $sitemaps,
         #[Autowire(param: WexampleSymfonySeoExtension::PARAMETER_ROBOTS_EXTRA)]
         private readonly string $extra,
+        #[AutowireIterator(PathLocalizerInterface::TAG)]
+        private readonly iterable $localizers = [],
     ) {
     }
 
@@ -116,12 +123,35 @@ class RobotsService
                     'disallow' => [],
                 ];
 
-                $groups[$key]['allow'] = array_merge($groups[$key]['allow'], $rule->allow);
-                $groups[$key]['disallow'] = array_merge($groups[$key]['disallow'], $rule->disallow);
+                $groups[$key]['allow'] = array_merge($groups[$key]['allow'], $this->localize($rule->allow));
+                $groups[$key]['disallow'] = array_merge($groups[$key]['disallow'], $this->localize($rule->disallow));
             }
         }
 
         return $groups;
+    }
+
+    /**
+     * The paths as the app serves them: a provider writes `/tunnels/plan/`,
+     * the app may answer it at `/en/tunnels/plan/` and in every other language.
+     *
+     * @param string[] $paths
+     *
+     * @return string[]
+     */
+    private function localize(array $paths): array
+    {
+        foreach ($this->localizers as $localizer) {
+            $localized = [];
+
+            foreach ($paths as $path) {
+                array_push($localized, ...$localizer->localizePath($path));
+            }
+
+            $paths = $localized;
+        }
+
+        return $paths;
     }
 
     /**
