@@ -3,8 +3,8 @@
 namespace Wexample\SymfonySeo\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Wexample\SymfonyHelpers\Interface\PathLocalizerInterface;
 use Wexample\SymfonyHelpers\DependencyInjection\AbstractWexampleSymfonyExtension;
+use Wexample\SymfonyHelpers\Interface\PathLocalizerInterface;
 use Wexample\SymfonySeo\Interface\RobotsProviderInterface;
 use Wexample\SymfonySeo\Service\RobotsService;
 

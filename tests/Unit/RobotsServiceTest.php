@@ -87,7 +87,7 @@ class RobotsServiceTest extends TestCase
     public function testRulesFollowThePathsTheAppActuallyServes(): void
     {
         // What symfony-translations does: every path under each language.
-        $localizer = new class implements PathLocalizerInterface {
+        $localizer = new class () implements PathLocalizerInterface {
             public function localizePath(string $path): array
             {
                 return ['/en'.$path, '/fr'.$path];
