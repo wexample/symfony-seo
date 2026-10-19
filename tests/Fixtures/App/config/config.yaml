@@ -10,6 +10,13 @@ wexample_symfony_seo:
   sitemap:
     exclude:
       - '^/excluded$'
+  redirect_hosts:
+    old-docs.example.com:
+      to: 'https://example.com'
+    moved.example.com:
+      to: 'https://example.com/'
+      keep_path: true
+      permanent: false
 
 services:
   _defaults:

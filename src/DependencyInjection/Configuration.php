@@ -68,6 +68,31 @@ class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+                // Hosts the app answers on only to send visitors elsewhere — a
+                // former domain pointed at the same server: `docs.example.com:
+                // { to: 'https://example.com' }`. Done before routing, so no route
+                // of the app can answer for them.
+                ->arrayNode('redirect_hosts')
+                    // A host is a key as written: `old-site.com` keeps its dash.
+                    ->normalizeKeys(false)
+                    ->useAttributeAsKey('host')
+                    ->arrayPrototype()
+                        ->children()
+                            ->scalarNode('to')
+                                ->isRequired()
+                                ->cannotBeEmpty()
+                            ->end()
+                            // Off, every page lands on `to` itself: the old paths
+                            // rarely mean anything on the new site.
+                            ->booleanNode('keep_path')
+                                ->defaultFalse()
+                            ->end()
+                            ->booleanNode('permanent')
+                                ->defaultTrue()
+                            ->end()
+                        ->end()
+                    ->end()
+                ->end()
                 ->arrayNode('favicon')
                     ->addDefaultsIfNotSet()
                     ->children()

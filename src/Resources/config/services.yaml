@@ -5,4 +5,4 @@ services:
         public: false
 
     Wexample\SymfonySeo\:
-        resource: '../../{Controller,Service}'
+        resource: '../../{Controller,EventSubscriber,Service}'
