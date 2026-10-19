@@ -7,6 +7,9 @@ wexample_symfony_seo:
     sitemaps:
       - 'https://example.com/sitemap.xml'
     extra: 'Crawl-delay: 10'
+  sitemap:
+    exclude:
+      - '^/excluded$'
 
 services:
   _defaults:
@@ -16,6 +19,9 @@ services:
 
   Wexample\SymfonySeo\Tests\Fixtures\Robots\:
     resource: '../../Robots/'
+
+  Wexample\SymfonySeo\Tests\Fixtures\Sitemap\:
+    resource: '../../Sitemap/'
 
 doctrine:
   orm:

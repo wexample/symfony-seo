@@ -16,6 +16,8 @@ class WexampleSymfonySeoExtension extends AbstractWexampleSymfonyExtension
     public const string PARAMETER_OPEN_GRAPH_ENABLED = 'wexample_symfony_seo.open_graph.enabled';
     public const string PARAMETER_OPEN_GRAPH_IMAGE = 'wexample_symfony_seo.open_graph.image';
     public const string PARAMETER_OPEN_GRAPH_SITE_NAME = 'wexample_symfony_seo.open_graph.site_name';
+    public const string PARAMETER_SITEMAP_ENABLED = 'wexample_symfony_seo.sitemap.enabled';
+    public const string PARAMETER_SITEMAP_EXCLUDE = 'wexample_symfony_seo.sitemap.exclude';
     public const string PARAMETER_FAVICON_ENABLED = 'wexample_symfony_seo.favicon.enabled';
     public const string PARAMETER_FAVICON_PATH = 'wexample_symfony_seo.favicon.path';
 
@@ -48,6 +50,9 @@ class WexampleSymfonySeoExtension extends AbstractWexampleSymfonyExtension
         $container->setParameter(self::PARAMETER_OPEN_GRAPH_ENABLED, $config['open_graph']['enabled']);
         $container->setParameter(self::PARAMETER_OPEN_GRAPH_IMAGE, $config['open_graph']['image']);
         $container->setParameter(self::PARAMETER_OPEN_GRAPH_SITE_NAME, $config['open_graph']['site_name']);
+
+        $container->setParameter(self::PARAMETER_SITEMAP_ENABLED, $config['sitemap']['enabled']);
+        $container->setParameter(self::PARAMETER_SITEMAP_EXCLUDE, $config['sitemap']['exclude']);
 
         $container->setParameter(self::PARAMETER_FAVICON_ENABLED, $config['favicon']['enabled']);
         $container->setParameter(

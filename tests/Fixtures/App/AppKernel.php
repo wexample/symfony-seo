@@ -30,5 +30,6 @@ class AppKernel extends AbstractFixtureKernel
     protected function configureRoutes(RoutingConfigurator $routes): void
     {
         $routes->import('@WexampleSymfonySeoBundle/Resources/config/routes.yaml');
+        $routes->import(__DIR__.'/../Sitemap/', 'attribute');
     }
 }

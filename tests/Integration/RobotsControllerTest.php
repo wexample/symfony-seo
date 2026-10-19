@@ -22,7 +22,11 @@ class RobotsControllerTest extends WebTestCase
         $this->assertStringContainsString("Disallow: /tunnel/\n", $body);
         $this->assertStringContainsString("User-agent: Googlebot\nDisallow: /no-google/\n", $body);
         $this->assertStringContainsString("Crawl-delay: 10\n", $body);
-        $this->assertStringEndsWith("Sitemap: https://example.com/sitemap.xml\n", $body);
+        // The configured sitemaps, then the bundle's own.
+        $this->assertStringEndsWith(
+            "Sitemap: https://example.com/sitemap.xml\nSitemap: http://localhost/sitemap.xml\n",
+            $body
+        );
     }
 
     public function testTheRouteNameCarriesNoUnderscorePrefix(): void

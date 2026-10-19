@@ -72,6 +72,17 @@ class RobotsServiceTest extends TestCase
         );
     }
 
+    public function testAPathIsDisallowedByTheLongestMatchingRule(): void
+    {
+        $service = $this->createService([new PrivateRobotsProvider()]);
+
+        $this->assertTrue($service->isDisallowed('/private/page'));
+        $this->assertFalse($service->isDisallowed('/private/public/page'));
+        $this->assertFalse($service->isDisallowed('/elsewhere'));
+        // Another user-agent's rules are not every crawler's.
+        $this->assertFalse($service->isDisallowed('/no-google/page'));
+    }
+
     private function createService(
         array $providers,
         bool $disallowAll = false,

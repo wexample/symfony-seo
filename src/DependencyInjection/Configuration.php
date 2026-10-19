@@ -52,6 +52,22 @@ class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+                // Every page a visitor can open, in every language, for the engines
+                // to find without following links: /sitemap.xml, named in robots.txt.
+                ->arrayNode('sitemap')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->booleanNode('enabled')
+                            ->defaultTrue()
+                        ->end()
+                        // Paths left out on top of what robots.txt disallows, as
+                        // regular expressions (`^/[^/]+/login`, the language prefix
+                        // included): pages reachable but not worth a search result.
+                        ->arrayNode('exclude')
+                            ->scalarPrototype()->end()
+                        ->end()
+                    ->end()
+                ->end()
                 ->arrayNode('favicon')
                     ->addDefaultsIfNotSet()
                     ->children()

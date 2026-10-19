@@ -35,7 +35,11 @@ class RobotsService
         return $this->enabled;
     }
 
-    public function buildBody(): string
+    /**
+     * @param string[] $sitemaps added to the configured ones: the bundle's own
+     *                           sitemap, whose address is only known per request
+     */
+    public function buildBody(array $sitemaps = []): string
     {
         if ($this->disallowAll) {
             return $this->renderGroup(RobotsRule::USER_AGENT_ALL, [], ['/']);
@@ -52,14 +56,41 @@ class RobotsService
         }
 
         // Sitemaps belong to no user-agent: kept apart, at the end.
-        if (! empty($this->sitemaps)) {
+        $sitemaps = array_unique([...$this->sitemaps, ...$sitemaps]);
+
+        if (! empty($sitemaps)) {
             $sections[] = implode('', array_map(
                 static fn (string $sitemap): string => 'Sitemap: '.$sitemap."\n",
-                $this->sitemaps
+                $sitemaps
             ));
         }
 
         return implode("\n", $sections);
+    }
+
+    /**
+     * Whether a crawler reading the file for every user-agent (`*`) would keep
+     * away from the path: a disallowed prefix matches it, and no longer allowed
+     * one does — the longest rule wins, as Google and Bing read it.
+     */
+    public function isDisallowed(string $path): bool
+    {
+        if ($this->disallowAll) {
+            return true;
+        }
+
+        $group = $this->collectGroups()[strtolower(RobotsRule::USER_AGENT_ALL)] ?? null;
+
+        if (null === $group) {
+            return false;
+        }
+
+        $longest = static fn (array $prefixes): int => max([-1, ...array_map(
+            static fn (string $prefix): int => str_starts_with($path, $prefix) ? strlen($prefix) : -1,
+            $prefixes
+        )]);
+
+        return $longest($group['disallow']) > $longest($group['allow']);
     }
 
     /**

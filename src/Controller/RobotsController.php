@@ -6,7 +6,9 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Wexample\SymfonySeo\Service\RobotsService;
+use Wexample\SymfonySeo\Service\SitemapService;
 
 #[AsController]
 class RobotsController
@@ -22,14 +24,20 @@ class RobotsController
         name: self::ROUTE_ROBOTS,
         methods: ['GET', 'HEAD']
     )]
-    public function robots(RobotsService $robotsService): Response
-    {
+    public function robots(
+        RobotsService $robotsService,
+        SitemapService $sitemapService,
+        UrlGeneratorInterface $urlGenerator,
+    ): Response {
         if (! $robotsService->isEnabled()) {
             throw new NotFoundHttpException('The robots.txt of this app is not served by symfony-seo.');
         }
 
         return new Response(
-            $robotsService->buildBody(),
+            // The bundle's own sitemap, by its whole address as the standard asks.
+            $robotsService->buildBody($sitemapService->isEnabled() ? [
+                $urlGenerator->generate(SitemapController::ROUTE_SITEMAP, [], UrlGeneratorInterface::ABSOLUTE_URL),
+            ] : []),
             Response::HTTP_OK,
             ['Content-Type' => 'text/plain; charset=UTF-8']
         );
