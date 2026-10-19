@@ -68,6 +68,14 @@ class Configuration implements ConfigurationInterface
                         ->end()
                     ->end()
                 ->end()
+                // What the engines are told of the site in schema.org's words, on
+                // every page: who it is about (`Person`, `Organization`), the site
+                // itself (`WebSite`). Each object a JSON-LD block, `@context` added
+                // where it is left out.
+                ->arrayNode('structured_data')
+                    ->normalizeKeys(false)
+                    ->variablePrototype()->end()
+                ->end()
                 // Hosts the app answers on only to send visitors elsewhere — a
                 // former domain pointed at the same server: `docs.example.com:
                 // { to: 'https://example.com' }`. Done before routing, so no route

@@ -10,6 +10,10 @@ wexample_symfony_seo:
   sitemap:
     exclude:
       - '^/excluded$'
+  structured_data:
+    - '@type': Person
+      name: 'Jane </script> Doe'
+      sameAs: ['https://github.com/jane']
   redirect_hosts:
     old-docs.example.com:
       to: 'https://example.com'
