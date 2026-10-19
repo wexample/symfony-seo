@@ -51,6 +51,12 @@ class PagesController
         return new Response();
     }
 
+    #[Route(path: '/redirect', name: 'redirect', options: ['sitemap' => false])]
+    public function redirect(): Response
+    {
+        return new Response();
+    }
+
     #[Route(path: '/account', name: 'account')]
     #[IsGranted('ROLE_USER')]
     public function account(): Response

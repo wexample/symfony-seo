@@ -13,12 +13,16 @@ use Wexample\SymfonySeo\DependencyInjection\WexampleSymfonySeoExtension;
  * The pages a visitor can open, read off the routes rather than listed by
  * hand: those answering GET with no parameter to guess, in every language
  * their path offers. Left out: paths for programs (`/_…`, `/api`), files
- * (`/robots.txt`), pages behind a sign-in (`#[IsGranted]`), what robots.txt
- * keeps crawlers from, and what the app excludes.
+ * (`/robots.txt`), pages behind a sign-in (`#[IsGranted]`), routes with the
+ * option `sitemap: false`, what robots.txt keeps crawlers from, and what the
+ * app excludes.
  */
 class SitemapService
 {
     private const string LOCALE = '_locale';
+    // A route option any bundle may set, false to keep a route out — a
+    // redirect, say — without depending on this one.
+    final public const string OPTION = 'sitemap';
     // Read by name: the security bundle is not a dependency of this one.
     private const string IS_GRANTED = 'Symfony\\Component\\Security\\Http\\Attribute\\IsGranted';
 
@@ -97,6 +101,10 @@ class SitemapService
      */
     private function isPage(Route $route): bool
     {
+        if (false === $route->getOption(self::OPTION)) {
+            return false;
+        }
+
         $methods = $route->getMethods();
 
         if (! empty($methods) && ! in_array('GET', $methods, true)) {
