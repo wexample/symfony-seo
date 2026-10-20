@@ -3,6 +3,7 @@
 namespace Wexample\SymfonySeo\Service;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouterInterface;
@@ -13,7 +14,8 @@ use Wexample\SymfonySeo\DependencyInjection\WexampleSymfonySeoExtension;
  * The pages a visitor can open, read off the routes rather than listed by
  * hand: those answering GET with no parameter to guess, in every language
  * their path offers. Left out: paths for programs (`/_…`, `/api`), files
- * (`/robots.txt`), pages behind a sign-in (`#[IsGranted]`), routes with the
+ * (`/robots.txt`), pages behind a sign-in (`#[IsGranted]` or the app's
+ * `access_control`), routes with the
  * option `sitemap: false`, what robots.txt keeps crawlers from, and what the
  * app excludes.
  */
@@ -25,6 +27,8 @@ class SitemapService
     final public const string OPTION = 'sitemap';
     // Read by name: the security bundle is not a dependency of this one.
     private const string IS_GRANTED = 'Symfony\\Component\\Security\\Http\\Attribute\\IsGranted';
+    // The only role an `access_control` rule may ask that lets a crawler in.
+    private const string PUBLIC_ACCESS = 'PUBLIC_ACCESS';
 
     /**
      * @param string[] $exclude
@@ -36,6 +40,10 @@ class SitemapService
         private readonly bool $enabled,
         #[Autowire(param: WexampleSymfonySeoExtension::PARAMETER_SITEMAP_EXCLUDE)]
         private readonly array $exclude,
+        // The app's `access_control`, a Symfony\Component\Security\Http\AccessMapInterface;
+        // null without the security bundle.
+        #[Autowire(service: 'security.access_map')]
+        private readonly ?object $accessMap = null,
     ) {
     }
 
@@ -185,6 +193,22 @@ class SitemapService
             }
         }
 
-        return true;
+        return ! $this->isRestricted($url);
+    }
+
+    /**
+     * Whether an `access_control` rule asks a role of whoever opens the page:
+     * one the controller does not guard itself, closed by the app's security
+     * configuration — a crawler would be sent to the sign-in.
+     */
+    private function isRestricted(string $url): bool
+    {
+        if (null === $this->accessMap) {
+            return false;
+        }
+
+        [$roles] = $this->accessMap->getPatterns(Request::create($url));
+
+        return ! empty(array_diff($roles ?? [], [self::PUBLIC_ACCESS]));
     }
 }
