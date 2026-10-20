@@ -4,6 +4,8 @@ namespace Wexample\SymfonySeo\DependencyInjection;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 use Symfony\Component\Config\Definition\ConfigurationInterface;
+use Symfony\Component\Config\Definition\Exception\InvalidConfigurationException;
+use Wexample\PhpSchemaOrg\Class\SchemaOrgVocabulary;
 
 class Configuration implements ConfigurationInterface
 {
@@ -71,10 +73,22 @@ class Configuration implements ConfigurationInterface
                 // What the engines are told of the site in schema.org's words, on
                 // every page: who it is about (`Person`, `Organization`), the site
                 // itself (`WebSite`). Each object a JSON-LD block, `@context` added
-                // where it is left out.
+                // where it is left out — checked against schema.org's vocabulary:
+                // a misspelt type or property stops the build.
                 ->arrayNode('structured_data')
                     ->normalizeKeys(false)
                     ->variablePrototype()->end()
+                    ->validate()
+                        ->always(static function (array $objects): array {
+                            $violations = (new SchemaOrgVocabulary())->getViolations(array_values($objects));
+
+                            if ([] !== $violations) {
+                                throw new InvalidConfigurationException('wexample_symfony_seo.structured_data: '.implode(' ', $violations));
+                            }
+
+                            return $objects;
+                        })
+                    ->end()
                 ->end()
                 // Hosts the app answers on only to send visitors elsewhere — a
                 // former domain pointed at the same server: `docs.example.com:

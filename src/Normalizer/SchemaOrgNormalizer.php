@@ -7,6 +7,7 @@ use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareTrait;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use Wexample\PhpSchemaOrg\Class\SchemaOrgVocabulary;
 use Wexample\SymfonyHelpers\Interface\EntityFieldReaderInterface;
 use Wexample\SymfonyHelpers\Interface\HeadStructuredDataProviderInterface;
 use Wexample\SymfonySeo\Attribute\SchemaOrg;
@@ -15,9 +16,10 @@ use Wexample\SymfonySeo\Helper\SchemaOrgHelper;
 
 /**
  * Any #[SchemaOrg] entity as a schema.org object, its fields read through the
- * EntityFieldReaderInterface services — in the visitor's language — and what
- * they hold handed back to the serializer: a nested entity is described by
- * this same normalizer, a media by symfony-media's.
+ * EntityFieldReaderInterface services — in the visitor's language —, written
+ * as schema.org's vocabulary says their property reads them, and what is an
+ * object handed back to the serializer: a nested entity is described by this
+ * same normalizer, a media by symfony-media's.
  */
 final class SchemaOrgNormalizer implements NormalizerInterface, NormalizerAwareInterface
 {
@@ -40,19 +42,10 @@ final class SchemaOrgNormalizer implements NormalizerInterface, NormalizerAwareI
     public const string CONTEXT_SEEN = 'schema_org_seen';
 
     /**
-     * The properties schema.org types as a Date (ISO 8601, a year alone
-     * allowed): an integer held there — a year — is written as text, a date
-     * without its time. Any other date keeps its time.
-     */
-    private const array DATE_PROPERTIES = [
-        'birthDate', 'dateCreated', 'dateModified', 'datePublished', 'deathDate', 'dissolutionDate',
-        'endDate', 'expires', 'foundingDate', 'startDate', 'uploadDate', 'validFrom', 'validThrough',
-    ];
-
-    /**
      * @param iterable<EntityFieldReaderInterface> $fieldReaders
      */
     public function __construct(
+        private readonly SchemaOrgVocabulary $vocabulary,
         #[AutowireIterator(EntityFieldReaderInterface::TAG)]
         private readonly iterable $fieldReaders = [],
     ) {
@@ -88,14 +81,17 @@ final class SchemaOrgNormalizer implements NormalizerInterface, NormalizerAwareI
         $id = $context[self::CONTEXT_ID] ?? null;
         $seen[$key] = $id;
         $schema = self::schemaOf($data);
+        $properties = self::propertiesOf($data);
+        $this->assertDescribable($data, $schema, $properties);
         $object = ['@type' => $schema->type] + ($id ? ['@id' => $id] : []);
 
         // What the fields hold is described without the subject's `@id`.
         $nested = [self::CONTEXT_ID => null] + $context;
 
-        foreach (self::propertiesOf($data) as $field => $name) {
+        foreach ($properties as $field => $name) {
             $value = $this->describe(
-                self::asDate($name, $this->read($data, $field, $context[self::CONTEXT_LOCALE] ?? null)),
+                $name,
+                $this->read($data, $field, $context[self::CONTEXT_LOCALE] ?? null),
                 $format,
                 $nested
             );
@@ -112,17 +108,20 @@ final class SchemaOrgNormalizer implements NormalizerInterface, NormalizerAwareI
         return $object;
     }
 
-    private function describe(mixed $value, ?string $format, array $context): mixed
+    /**
+     * What a field holds as its property reads it — a year as a Date, a
+     * moment with its time where a DateTime is accepted (SchemaOrgVocabulary)
+     * —, each item of a list in turn, an object handed to the serializer.
+     */
+    private function describe(string $name, mixed $value, ?string $format, array $context): mixed
     {
-        if ($value instanceof \DateTimeInterface) {
-            return $value->format(\DateTimeInterface::ATOM);
-        }
+        $value = $this->vocabulary->write($name, $value);
 
         if (is_iterable($value)) {
             $items = [];
 
             foreach ($value as $item) {
-                if (null !== $item = $this->describe($item, $format, $context)) {
+                if (null !== $item = $this->describe($name, $item, $format, $context)) {
                     $items[] = $item;
                 }
             }
@@ -136,20 +135,26 @@ final class SchemaOrgNormalizer implements NormalizerInterface, NormalizerAwareI
     }
 
     /**
-     * A value written as schema.org reads the property it fills, when that
-     * property is a Date; any other is left as it is.
+     * A type or a property schema.org does not have is a mistake of the
+     * entity's code, told as such rather than printed for the engines to
+     * ignore.
+     *
+     * @param array<string, string> $properties
      */
-    private static function asDate(string $name, mixed $value): mixed
+    private function assertDescribable(object $entity, SchemaOrg $schema, array $properties): void
     {
-        if (! in_array($name, self::DATE_PROPERTIES, true)) {
-            return $value;
-        }
+        $violations = $this->vocabulary->getViolations(
+            ['@type' => $schema->type] + array_fill_keys($properties, null) + $schema->extra
+        );
 
-        return match (true) {
-            is_int($value) => (string) $value,
-            $value instanceof \DateTimeInterface => $value->format('Y-m-d'),
-            default => $value,
-        };
+        if ([] !== $violations) {
+            throw new \LogicException(sprintf(
+                '%s is described in words schema.org %s does not have: %s',
+                $entity instanceof Proxy ? get_parent_class($entity) : $entity::class,
+                $this->vocabulary->getVersion(),
+                implode(' ', $violations)
+            ));
+        }
     }
 
     private function read(object $entity, string $field, ?string $locale): mixed

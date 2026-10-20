@@ -6,10 +6,12 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Serializer\Serializer;
+use Wexample\PhpSchemaOrg\Class\SchemaOrgVocabulary;
 use Wexample\SymfonySeo\Normalizer\SchemaOrgFallbackNormalizer;
 use Wexample\SymfonySeo\Normalizer\SchemaOrgNormalizer;
 use Wexample\SymfonySeo\Service\StructuredDataProvider;
 use Wexample\SymfonySeo\Tests\Fixtures\SchemaOrg\FixtureFieldReader;
+use Wexample\SymfonySeo\Tests\Fixtures\SchemaOrg\FixtureMisspeltWork;
 use Wexample\SymfonySeo\Tests\Fixtures\SchemaOrg\FixturePerson;
 use Wexample\SymfonySeo\Tests\Fixtures\SchemaOrg\FixtureWork;
 
@@ -68,15 +70,23 @@ class StructuredDataProviderTest extends TestCase
         ], $subject);
     }
 
-    public function testADatePropertyIsWrittenAsSchemaOrgReadsIt(): void
+    public function testAFieldIsWrittenAsItsPropertyReadsIt(): void
     {
         $work = new FixtureWork();
 
+        // A Date or a DateTime: a year a Date, a moment keeping its time.
         $work->created = 2022;
         $this->assertSame('2022', $this->provider([])->getHeadStructuredData(['subject' => $work] + self::DOCUMENT)[0]['dateCreated']);
 
-        $work->created = new \DateTimeImmutable('2022-03-14 10:30:00');
-        $this->assertSame('2022-03-14', $this->provider([])->getHeadStructuredData(['subject' => $work] + self::DOCUMENT)[0]['dateCreated']);
+        $work->created = new \DateTimeImmutable('2022-03-14 10:30:00+01:00');
+        $this->assertSame('2022-03-14T10:30:00+01:00', $this->provider([])->getHeadStructuredData(['subject' => $work] + self::DOCUMENT)[0]['dateCreated']);
+    }
+
+    public function testAPropertySchemaOrgDoesNotHaveIsAMistake(): void
+    {
+        $this->expectExceptionMessage('"dateCreatd" is not a schema.org property.');
+
+        $this->provider([])->getHeadStructuredData(['subject' => new FixtureMisspeltWork()] + self::DOCUMENT);
     }
 
     public function testAnObjectMetAgainIsReferredTo(): void
@@ -119,7 +129,7 @@ class StructuredDataProviderTest extends TestCase
         return new StructuredDataProvider(
             $objects,
             new Serializer([
-                new SchemaOrgNormalizer([new FixtureFieldReader()]),
+                new SchemaOrgNormalizer(new SchemaOrgVocabulary(), [new FixtureFieldReader()]),
                 new SchemaOrgFallbackNormalizer(),
             ]),
             $requestStack,

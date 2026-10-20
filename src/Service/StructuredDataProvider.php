@@ -5,6 +5,7 @@ namespace Wexample\SymfonySeo\Service;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use Wexample\PhpSchemaOrg\Class\SchemaOrgVocabulary;
 use Wexample\SymfonyHelpers\Interface\HeadStructuredDataProviderInterface;
 use Wexample\SymfonySeo\DependencyInjection\WexampleSymfonySeoExtension;
 use Wexample\SymfonySeo\Helper\SchemaOrgHelper;
@@ -18,8 +19,6 @@ use Wexample\SymfonySeo\Normalizer\SchemaOrgNormalizer;
  */
 class StructuredDataProvider implements HeadStructuredDataProviderInterface
 {
-    private const string CONTEXT = 'https://schema.org';
-
     public function __construct(
         #[Autowire(param: WexampleSymfonySeoExtension::PARAMETER_STRUCTURED_DATA)]
         private readonly array $objects,
@@ -44,7 +43,7 @@ class StructuredDataProvider implements HeadStructuredDataProviderInterface
             // First when added, as written: the context is read before the rest.
             static fn (array $object): array => isset($object['@context'])
                 ? $object
-                : ['@context' => self::CONTEXT] + $object,
+                : ['@context' => SchemaOrgVocabulary::CONTEXT] + $object,
             $objects
         );
     }
