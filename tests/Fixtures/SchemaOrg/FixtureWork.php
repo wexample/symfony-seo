@@ -22,4 +22,8 @@ class FixtureWork
 
     #[SchemaOrgProperty('keywords')]
     public array $techs = [];
+
+    /** A year, or a date: schema.org's Date either way. */
+    #[SchemaOrgProperty('dateCreated')]
+    public int|\DateTimeInterface|null $created = null;
 }

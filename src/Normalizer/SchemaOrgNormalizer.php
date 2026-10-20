@@ -40,6 +40,16 @@ final class SchemaOrgNormalizer implements NormalizerInterface, NormalizerAwareI
     public const string CONTEXT_SEEN = 'schema_org_seen';
 
     /**
+     * The properties schema.org types as a Date (ISO 8601, a year alone
+     * allowed): an integer held there — a year — is written as text, a date
+     * without its time. Any other date keeps its time.
+     */
+    private const array DATE_PROPERTIES = [
+        'birthDate', 'dateCreated', 'dateModified', 'datePublished', 'deathDate', 'dissolutionDate',
+        'endDate', 'expires', 'foundingDate', 'startDate', 'uploadDate', 'validFrom', 'validThrough',
+    ];
+
+    /**
      * @param iterable<EntityFieldReaderInterface> $fieldReaders
      */
     public function __construct(
@@ -85,7 +95,7 @@ final class SchemaOrgNormalizer implements NormalizerInterface, NormalizerAwareI
 
         foreach (self::propertiesOf($data) as $field => $name) {
             $value = $this->describe(
-                $this->read($data, $field, $context[self::CONTEXT_LOCALE] ?? null),
+                self::asDate($name, $this->read($data, $field, $context[self::CONTEXT_LOCALE] ?? null)),
                 $format,
                 $nested
             );
@@ -125,6 +135,23 @@ final class SchemaOrgNormalizer implements NormalizerInterface, NormalizerAwareI
             : $value;
     }
 
+    /**
+     * A value written as schema.org reads the property it fills, when that
+     * property is a Date; any other is left as it is.
+     */
+    private static function asDate(string $name, mixed $value): mixed
+    {
+        if (! in_array($name, self::DATE_PROPERTIES, true)) {
+            return $value;
+        }
+
+        return match (true) {
+            is_int($value) => (string) $value,
+            $value instanceof \DateTimeInterface => $value->format('Y-m-d'),
+            default => $value,
+        };
+    }
+
     private function read(object $entity, string $field, ?string $locale): mixed
     {
         foreach ($this->fieldReaders as $reader) {
@@ -141,7 +168,6 @@ final class SchemaOrgNormalizer implements NormalizerInterface, NormalizerAwareI
 
         return (new \ReflectionProperty($entity, $field))->getValue($entity);
     }
-
 
     private static function schemaOf(object $entity): ?SchemaOrg
     {

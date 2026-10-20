@@ -68,6 +68,17 @@ class StructuredDataProviderTest extends TestCase
         ], $subject);
     }
 
+    public function testADatePropertyIsWrittenAsSchemaOrgReadsIt(): void
+    {
+        $work = new FixtureWork();
+
+        $work->created = 2022;
+        $this->assertSame('2022', $this->provider([])->getHeadStructuredData(['subject' => $work] + self::DOCUMENT)[0]['dateCreated']);
+
+        $work->created = new \DateTimeImmutable('2022-03-14 10:30:00');
+        $this->assertSame('2022-03-14', $this->provider([])->getHeadStructuredData(['subject' => $work] + self::DOCUMENT)[0]['dateCreated']);
+    }
+
     public function testAnObjectMetAgainIsReferredTo(): void
     {
         $work = new FixtureWork();
