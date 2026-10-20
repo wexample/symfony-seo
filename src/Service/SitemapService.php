@@ -3,17 +3,21 @@
 namespace Wexample\SymfonySeo\Service;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\Route;
 use Symfony\Component\Routing\RouterInterface;
 use Wexample\SymfonySeo\Class\SitemapEntry;
+use Wexample\SymfonySeo\Class\SitemapRoute;
 use Wexample\SymfonySeo\DependencyInjection\WexampleSymfonySeoExtension;
+use Wexample\SymfonySeo\Interface\SitemapProviderInterface;
 
 /**
  * The pages a visitor can open, read off the routes rather than listed by
  * hand: those answering GET with no parameter to guess, in every language
- * their path offers. Left out: paths for programs (`/_…`, `/api`), files
+ * their path offers, joined by those the providers name — a route with a
+ * parameter, filled in by the app that knows its values. Left out: paths for programs (`/_…`, `/api`), files
  * (`/robots.txt`), pages behind a sign-in (`#[IsGranted]` or the app's
  * `access_control`), routes with the
  * option `sitemap: false`, what robots.txt keeps crawlers from, and what the
@@ -21,6 +25,7 @@ use Wexample\SymfonySeo\DependencyInjection\WexampleSymfonySeoExtension;
  */
 class SitemapService
 {
+    final public const string TAG_PROVIDER = 'wexample_symfony_seo.sitemap_provider';
     private const string LOCALE = '_locale';
     // A route option any bundle may set, false to keep a route out — a
     // redirect, say — without depending on this one.
@@ -32,6 +37,7 @@ class SitemapService
 
     /**
      * @param string[] $exclude
+     * @param iterable<SitemapProviderInterface> $providers
      */
     public function __construct(
         private readonly RouterInterface $router,
@@ -44,6 +50,8 @@ class SitemapService
         // null without the security bundle.
         #[Autowire(service: 'security.access_map')]
         private readonly ?object $accessMap = null,
+        #[AutowireIterator(self::TAG_PROVIDER)]
+        private readonly iterable $providers = [],
     ) {
     }
 
@@ -60,44 +68,63 @@ class SitemapService
         $entries = [];
 
         foreach ($this->router->getRouteCollection() as $name => $route) {
-            if (! $this->isPage($route)) {
-                continue;
+            if ($this->isPage($route)) {
+                array_push($entries, ...$this->getRouteEntries(new SitemapRoute($name), $route));
             }
+        }
 
-            $locales = $this->getLocales($route);
+        foreach ($this->providers as $provider) {
+            foreach ($provider->getSitemapRoutes() as $sitemapRoute) {
+                $route = $this->router->getRouteCollection()->get($sitemapRoute->name);
 
-            if (empty($locales)) {
-                $url = $this->router->generate($name, [], UrlGeneratorInterface::ABSOLUTE_URL);
-
-                if ($this->isListed($url)) {
-                    $entries[] = new SitemapEntry($url);
+                if (null !== $route && ! $this->isGuarded((string) $route->getDefault('_controller'))) {
+                    array_push($entries, ...$this->getRouteEntries($sitemapRoute, $route));
                 }
-
-                continue;
             }
+        }
 
-            $alternates = [];
+        return $entries;
+    }
 
-            foreach ($locales as $locale) {
-                $alternates[str_replace('_', '-', $locale)] = $this->router->generate(
-                    $name,
-                    [self::LOCALE => $locale],
-                    UrlGeneratorInterface::ABSOLUTE_URL
-                );
-            }
+    /**
+     * The page in each language its path offers, each one pointing at the
+     * others.
+     *
+     * @return SitemapEntry[]
+     */
+    private function getRouteEntries(SitemapRoute $sitemapRoute, Route $route): array
+    {
+        $locales = $this->getLocales($route);
 
-            $default = $route->getDefault(self::LOCALE);
+        if (empty($locales)) {
+            $url = $this->router->generate($sitemapRoute->name, $sitemapRoute->parameters, UrlGeneratorInterface::ABSOLUTE_URL);
 
-            if (in_array($default, $locales, true)) {
-                $alternates['x-default'] = $alternates[str_replace('_', '-', $default)];
-            }
+            return $this->isListed($url) ? [new SitemapEntry($url)] : [];
+        }
 
-            foreach ($locales as $locale) {
-                $url = $alternates[str_replace('_', '-', $locale)];
+        $alternates = [];
 
-                if ($this->isListed($url)) {
-                    $entries[] = new SitemapEntry($url, $alternates);
-                }
+        foreach ($locales as $locale) {
+            $alternates[str_replace('_', '-', $locale)] = $this->router->generate(
+                $sitemapRoute->name,
+                [self::LOCALE => $locale] + $sitemapRoute->parameters,
+                UrlGeneratorInterface::ABSOLUTE_URL
+            );
+        }
+
+        $default = $route->getDefault(self::LOCALE);
+
+        if (in_array($default, $locales, true)) {
+            $alternates['x-default'] = $alternates[str_replace('_', '-', $default)];
+        }
+
+        $entries = [];
+
+        foreach ($locales as $locale) {
+            $url = $alternates[str_replace('_', '-', $locale)];
+
+            if ($this->isListed($url)) {
+                $entries[] = new SitemapEntry($url, $alternates);
             }
         }
 

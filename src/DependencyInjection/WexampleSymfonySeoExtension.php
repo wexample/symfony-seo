@@ -6,7 +6,9 @@ use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Wexample\SymfonyHelpers\DependencyInjection\AbstractWexampleSymfonyExtension;
 use Wexample\SymfonyHelpers\Interface\PathLocalizerInterface;
 use Wexample\SymfonySeo\Interface\RobotsProviderInterface;
+use Wexample\SymfonySeo\Interface\SitemapProviderInterface;
 use Wexample\SymfonySeo\Service\RobotsService;
+use Wexample\SymfonySeo\Service\SitemapService;
 
 class WexampleSymfonySeoExtension extends AbstractWexampleSymfonyExtension
 {
@@ -39,6 +41,9 @@ class WexampleSymfonySeoExtension extends AbstractWexampleSymfonyExtension
         $container
             ->registerForAutoconfiguration(RobotsProviderInterface::class)
             ->addTag(RobotsService::TAG_PROVIDER);
+        $container
+            ->registerForAutoconfiguration(SitemapProviderInterface::class)
+            ->addTag(SitemapService::TAG_PROVIDER);
         // Implemented by symfony-translations, when installed: the paths of the
         // rules follow the language prefix of the urls.
         $container

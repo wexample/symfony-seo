@@ -1,6 +1,6 @@
 # symfony-seo
 
-Version: 6.0.0
+Version: 7.0.0
 
 Search engine facing endpoints for Symfony, composed by the installed bundles
 
