@@ -1,6 +1,6 @@
 # symfony-seo
 
-Version: 7.0.0
+Version: 8.0.0
 
 Search engine facing endpoints for Symfony, composed by the installed bundles
 
@@ -24,7 +24,7 @@ The suite includes packages for configuration management, file handling, prompts
 ## Dependencies
 
 - php: >=8.5
-- wexample/symfony-helpers: >=17.0.0
+- wexample/symfony-helpers: >=18.0.0
 
 ## Versioning & Compatibility Policy
 
