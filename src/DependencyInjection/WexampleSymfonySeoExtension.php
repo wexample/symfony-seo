@@ -26,6 +26,7 @@ class WexampleSymfonySeoExtension extends AbstractWexampleSymfonyExtension
     public const string PARAMETER_FAVICON_PATH = 'wexample_symfony_seo.favicon.path';
     public const string PARAMETER_REDIRECT_HOSTS = 'wexample_symfony_seo.redirect_hosts';
     public const string PARAMETER_STRUCTURED_DATA = 'wexample_symfony_seo.structured_data';
+    public const string PARAMETER_STRUCTURED_DATA_PAGES = 'wexample_symfony_seo.structured_data_pages';
 
     public function load(
         array $configs,
@@ -75,6 +76,7 @@ class WexampleSymfonySeoExtension extends AbstractWexampleSymfonyExtension
 
         $container->setParameter(self::PARAMETER_REDIRECT_HOSTS, $config['redirect_hosts']);
         $container->setParameter(self::PARAMETER_STRUCTURED_DATA, $config['structured_data']);
+        $container->setParameter(self::PARAMETER_STRUCTURED_DATA_PAGES, $config['structured_data_pages']);
 
         $container->setParameter(self::PARAMETER_FAVICON_ENABLED, $config['favicon']['enabled']);
         $container->setParameter(

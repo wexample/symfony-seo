@@ -14,8 +14,9 @@ use Wexample\SymfonySeo\Normalizer\SchemaOrgNormalizer;
 /**
  * What the app declares of itself for the engines — the person or the company
  * behind it, the site —, the same on every page: what a knowledge panel and a
- * rich result are drawn from. A page about an entity (`document_subject`) adds
- * that entity, described by its #[SchemaOrg].
+ * rich result are drawn from. A page the configuration describes by its route
+ * adds itself — an about page a ProfilePage —, and a page about an entity
+ * (`document_subject`) adds that entity, described by its normalizer.
  */
 class StructuredDataProvider implements HeadStructuredDataProviderInterface
 {
@@ -24,6 +25,9 @@ class StructuredDataProvider implements HeadStructuredDataProviderInterface
         private readonly array $objects,
         private readonly NormalizerInterface $normalizer,
         private readonly RequestStack $requestStack,
+        private readonly SchemaOrgVocabulary $vocabulary,
+        #[Autowire(param: WexampleSymfonySeoExtension::PARAMETER_STRUCTURED_DATA_PAGES)]
+        private readonly array $pages = [],
     ) {
     }
 
@@ -35,6 +39,10 @@ class StructuredDataProvider implements HeadStructuredDataProviderInterface
             array_values(array_filter($this->objects, 'is_array'))
         );
 
+        if ($page = $this->describePage($document)) {
+            $objects[] = $page;
+        }
+
         if ($subject = $this->describeSubject($document)) {
             $objects[] = $subject;
         }
@@ -45,6 +53,27 @@ class StructuredDataProvider implements HeadStructuredDataProviderInterface
                 ? $object
                 : ['@context' => SchemaOrgVocabulary::CONTEXT] + $object,
             $objects
+        );
+    }
+
+    /**
+     * The page itself, when the configuration describes its route: the object
+     * configured, completed with its address, its title and its language.
+     */
+    private function describePage(array $document): ?array
+    {
+        $request = $this->requestStack->getCurrentRequest();
+
+        if (! is_array($page = $this->pages[$request?->attributes->get('_route')] ?? null)) {
+            return null;
+        }
+
+        $url = $document['url'] ?? null;
+
+        return $this->complete(
+            SchemaOrgHelper::resolveIds($page, $request->getSchemeAndHttpHost()),
+            $url ? $url.'#page' : null,
+            ['url' => $url, 'name' => $document['title'] ?? null, 'inLanguage' => $request->getLocale()]
         );
     }
 
@@ -71,9 +100,35 @@ class StructuredDataProvider implements HeadStructuredDataProviderInterface
             return null;
         }
 
-        return $object + array_filter([
+        return $this->complete($object, $url ? $url.'#subject' : null, [
             'url' => $url,
             'inLanguage' => $request?->getLocale(),
         ]);
+    }
+
+    /**
+     * An object given the `@id` it does not have — a normalizer of another
+     * bundle may not set it — and those of the properties it lacks its type
+     * has: a Product has no `inLanguage`.
+     *
+     * @param array<string, mixed> $properties
+     */
+    private function complete(array $object, ?string $id, array $properties): array
+    {
+        if ($id && ! isset($object['@id'])) {
+            $object = ['@type' => $object['@type'] ?? null, '@id' => $id] + $object;
+        }
+
+        foreach (array_filter($properties) as $name => $value) {
+            foreach ((array) ($object['@type'] ?? []) as $type) {
+                if ($this->vocabulary->isPropertyOf($name, $type)) {
+                    $object[$name] ??= $value;
+
+                    break;
+                }
+            }
+        }
+
+        return $object;
     }
 }

@@ -90,6 +90,33 @@ class Configuration implements ConfigurationInterface
                         })
                     ->end()
                 ->end()
+                // What a page is, by its route: `about_index: { '@type': ProfilePage,
+                // mainEntity: { '@id': '/#person' } }`. Completed with the page's
+                // address (`#page`), its title and its language; checked as the
+                // objects above are.
+                ->arrayNode('structured_data_pages')
+                    ->normalizeKeys(false)
+                    ->useAttributeAsKey('route')
+                    ->variablePrototype()->end()
+                    ->validate()
+                        ->always(static function (array $pages): array {
+                            $vocabulary = new SchemaOrgVocabulary();
+                            $violations = [];
+
+                            foreach ($pages as $route => $page) {
+                                foreach ($vocabulary->getViolations((array) $page, $route) as $violation) {
+                                    $violations[] = $violation;
+                                }
+                            }
+
+                            if ([] !== $violations) {
+                                throw new InvalidConfigurationException('wexample_symfony_seo.structured_data_pages: '.implode(' ', $violations));
+                            }
+
+                            return $pages;
+                        })
+                    ->end()
+                ->end()
                 // Hosts the app answers on only to send visitors elsewhere — a
                 // former domain pointed at the same server: `docs.example.com:
                 // { to: 'https://example.com' }`. Done before routing, so no route

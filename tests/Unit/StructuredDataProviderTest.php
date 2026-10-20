@@ -89,6 +89,56 @@ class StructuredDataProviderTest extends TestCase
         $this->provider([])->getHeadStructuredData(['subject' => new FixtureMisspeltWork()] + self::DOCUMENT);
     }
 
+    public function testAPageDescribedByItsRouteIsCompletedWithWhatThePageSays(): void
+    {
+        $objects = $this->provider([], ['about_index' => ['@type' => 'ProfilePage', 'mainEntity' => ['@id' => '/#person']]])
+            ->getHeadStructuredData(['title' => 'About', 'url' => 'https://example.com/fr/about'] + self::DOCUMENT);
+
+        $this->assertSame([
+            '@context' => 'https://schema.org',
+            '@type' => 'ProfilePage',
+            '@id' => 'https://example.com/fr/about#page',
+            'mainEntity' => ['@id' => 'https://example.com/#person'],
+            'url' => 'https://example.com/fr/about',
+            'name' => 'About',
+            'inLanguage' => 'fr',
+        ], $objects[0]);
+    }
+
+    public function testASubjectIsGivenOnlyThePropertiesItsTypeHas(): void
+    {
+        $product = new \stdClass();
+        $serializer = new Serializer([new class implements \Symfony\Component\Serializer\Normalizer\NormalizerInterface {
+            public function getSupportedTypes(?string $format): array
+            {
+                return ['object' => true];
+            }
+
+            public function supportsNormalization(mixed $data, ?string $format = null, array $context = []): bool
+            {
+                return true;
+            }
+
+            public function normalize(mixed $data, ?string $format = null, array $context = []): array
+            {
+                return ['@type' => 'Product', 'name' => 'Ticket'];
+            }
+        }]);
+
+        $subject = $this->provider([], serializer: $serializer)->getHeadStructuredData(
+            ['url' => 'https://example.com/fr/shop/ticket', 'subject' => $product] + self::DOCUMENT
+        )[0];
+
+        $this->assertSame([
+            '@context' => 'https://schema.org',
+            '@type' => 'Product',
+            '@id' => 'https://example.com/fr/shop/ticket#subject',
+            'name' => 'Ticket',
+            // No inLanguage: a Product has none.
+            'url' => 'https://example.com/fr/shop/ticket',
+        ], $subject);
+    }
+
     public function testAnObjectMetAgainIsReferredTo(): void
     {
         $work = new FixtureWork();
@@ -119,20 +169,24 @@ class StructuredDataProviderTest extends TestCase
         ));
     }
 
-    private function provider(array $objects): StructuredDataProvider
+    private function provider(array $objects, array $pages = [], ?Serializer $serializer = null): StructuredDataProvider
     {
         $requestStack = new RequestStack();
         $request = Request::create('https://example.com/fr/works/one');
         $request->setLocale('fr');
+        $request->attributes->set('_route', 'about_index');
         $requestStack->push($request);
+        $vocabulary = new SchemaOrgVocabulary();
 
         return new StructuredDataProvider(
             $objects,
-            new Serializer([
-                new SchemaOrgNormalizer(new SchemaOrgVocabulary(), [new FixtureFieldReader()]),
+            $serializer ?? new Serializer([
+                new SchemaOrgNormalizer($vocabulary, [new FixtureFieldReader()]),
                 new SchemaOrgFallbackNormalizer(),
             ]),
             $requestStack,
+            $vocabulary,
+            $pages,
         );
     }
 }
