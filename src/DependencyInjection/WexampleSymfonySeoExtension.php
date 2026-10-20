@@ -4,6 +4,7 @@ namespace Wexample\SymfonySeo\DependencyInjection;
 
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Wexample\SymfonyHelpers\DependencyInjection\AbstractWexampleSymfonyExtension;
+use Wexample\SymfonyHelpers\Interface\EntityFieldReaderInterface;
 use Wexample\SymfonyHelpers\Interface\PathLocalizerInterface;
 use Wexample\SymfonySeo\Interface\RobotsProviderInterface;
 use Wexample\SymfonySeo\Interface\SitemapProviderInterface;
@@ -49,6 +50,11 @@ class WexampleSymfonySeoExtension extends AbstractWexampleSymfonyExtension
         $container
             ->registerForAutoconfiguration(PathLocalizerInterface::class)
             ->addTag(PathLocalizerInterface::TAG);
+        // Implemented by symfony-translations too: a described entity's fields
+        // read in the visitor's language.
+        $container
+            ->registerForAutoconfiguration(EntityFieldReaderInterface::class)
+            ->addTag(EntityFieldReaderInterface::TAG);
 
         $config = $this->processConfiguration(
             new Configuration(),

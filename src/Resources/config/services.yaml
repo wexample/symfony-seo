@@ -6,3 +6,13 @@ services:
 
     Wexample\SymfonySeo\:
         resource: '../../{Controller,EventSubscriber,Service}'
+
+    Wexample\SymfonySeo\Normalizer\SchemaOrgNormalizer: ~
+
+    # Just above the serializer's ObjectNormalizer (-1000), below everything
+    # describing an object of its own — and not autoconfigured, which would tag
+    # it a second time, at 0.
+    Wexample\SymfonySeo\Normalizer\SchemaOrgFallbackNormalizer:
+        autoconfigure: false
+        tags: [{ name: serializer.normalizer, priority: -999 }]
+
