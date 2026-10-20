@@ -7,6 +7,8 @@ Search engines read what a page is in schema.org's vocabulary, as JSON-LD blocks
 
 They come through `HeadStructuredDataProviderInterface` (symfony-helpers), which the page's base template of symfony-loader prints.
 
+Both are checked against schema.org's vocabulary, the release php-schema-org bundles: a type or a property schema.org does not have — misspelt, on the wrong type, or replaced by another — is a mistake reported where it is written, not a block the engines silently ignore.
+
 ## The site
 
 ```yaml
@@ -23,6 +25,23 @@ wexample_symfony_seo:
 
 An `@id` opening on a slash is completed with the address the page is served from — `https://example.com/#person` — so that what refers to it, on any host, finds the same node.
 
+A misspelt type or property stops the container's build, naming it: `wexample_symfony_seo.structured_data: [0]: "nmae" is not a schema.org property.`
+
+## A page
+
+What a page is, by its route, completed with its address (`#page`), its title and its language — an about page the profile of the person of the site:
+
+```yaml
+wexample_symfony_seo:
+  structured_data_pages:
+    about_index:
+      '@type': ProfilePage
+      mainEntity:
+        '@id': '/#person'
+```
+
+Checked against the vocabulary as `structured_data` is.
+
 ## The page's subject
 
 An entity says what it is with `#[SchemaOrg]`, and which of its fields are which property with `#[SchemaOrgProperty]`:
@@ -35,6 +54,9 @@ class Project extends AbstractEntity
     #[SchemaOrgProperty('name')]
     protected string $title;
 
+    #[SchemaOrgProperty('dateCreated')]
+    protected ?int $startYear = null;
+
     #[SchemaOrgProperty('image')]
     protected ?Media $cover = null;
 }
@@ -46,14 +68,19 @@ Its page names it, once:
 {%- set document_subject = project -%}
 ```
 
-The entity is then described by `SchemaOrgNormalizer`, in the serializer's `schema_org` format, and completed with what the page knows of it: its `@id` (the canonical address and `#subject`), its `url`, its `inLanguage`.
+The entity is then described by `SchemaOrgNormalizer`, in the serializer's `schema_org` format, and completed with what the page knows of it: its `@id` (the canonical address and `#subject`), its `url`, its `inLanguage` — each only where its type has the property: a Product has no `inLanguage`.
 
 - A field is read through the `EntityFieldReaderInterface` services: a `#[Translatable]` one in the visitor's language when symfony-translations is installed, as stored otherwise.
-- What a field holds is described in turn: another `#[SchemaOrg]` entity by this same normalizer, a media by symfony-media's — an `ImageObject` at the address it is served from, a restricted one left out. An object nothing describes is left out rather than dumped.
+- Its value is written as its property reads it, from the property's range in the vocabulary: a year in a `dateCreated` as `"2022"`, a moment keeping its time where a DateTime is accepted and losing it where only a Date is (`birthDate`), a `DateInterval` in a `duration` as `PT1H30M`, an enumeration's member as its address (`https://schema.org/InStock`).
+- What a field holds as an object is described in turn: another `#[SchemaOrg]` entity by this same normalizer, a media by symfony-media's — an `ImageObject` at the address it is served from, a restricted one left out. An object nothing describes is left out rather than dumped, and is never cast to text.
 - An empty field is left out.
 - An object met again in the same description is referred to by its `@id`, or left out without one: a cycle stops there.
 - `extra` adds what no field holds, its relative `@id` completed as the configuration's are: an author kept in configuration, until it is an entity of its own.
 
+A type or a property the vocabulary does not have — in `#[SchemaOrg]`, `#[SchemaOrgProperty]` or `extra` — throws a `LogicException` naming the entity, when its page is shown.
+
 ## Describing an object from another bundle
 
-A normalizer supporting the `schema_org` format (`HeadStructuredDataProviderInterface::FORMAT_SCHEMA_ORG`) for its class describes it wherever an entity holds one. The api's entity normalizers leave that format alone.
+A normalizer supporting the `schema_org` format (`HeadStructuredDataProviderInterface::FORMAT_SCHEMA_ORG`) for its class describes it wherever an entity holds one, and as a page's subject: symfony-shop-ds describes a product with its offers, symfony-media a media as an ImageObject. Returning null leaves the object out — a product without a price. The api's entity normalizers leave that format alone.
+
+The trail of a page is told by symfony-design-system, which draws it: a `BreadcrumbList`.

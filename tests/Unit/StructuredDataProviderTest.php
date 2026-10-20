@@ -108,7 +108,7 @@ class StructuredDataProviderTest extends TestCase
     public function testASubjectIsGivenOnlyThePropertiesItsTypeHas(): void
     {
         $product = new \stdClass();
-        $serializer = new Serializer([new class implements \Symfony\Component\Serializer\Normalizer\NormalizerInterface {
+        $serializer = new Serializer([new class () implements \Symfony\Component\Serializer\Normalizer\NormalizerInterface {
             public function getSupportedTypes(?string $format): array
             {
                 return ['object' => true];
