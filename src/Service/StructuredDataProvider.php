@@ -64,7 +64,11 @@ class StructuredDataProvider implements HeadStructuredDataProviderInterface
     {
         $request = $this->requestStack->getCurrentRequest();
 
-        if (! is_array($page = $this->pages[$request?->attributes->get('_route')] ?? null)) {
+        // No route on an error page or a sub-request: nothing to describe, and
+        // a null key would be read as '' — deprecated, logged at every request.
+        $route = $request?->attributes->get('_route');
+
+        if (null === $route || ! is_array($page = $this->pages[$route] ?? null)) {
             return null;
         }
 
