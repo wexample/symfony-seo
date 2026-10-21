@@ -13,6 +13,9 @@ class RobotsService
 {
     final public const string TAG_PROVIDER = 'wexample_symfony_seo.robots_provider';
 
+    /** Every address with a query, in the wildcard Google, Bing and the AI crawlers read. */
+    final public const string QUERY_PATTERN = '/*?';
+
     /**
      * @param iterable<RobotsProviderInterface> $providers
      * @param string[] $sitemaps
@@ -34,6 +37,8 @@ class RobotsService
         private readonly string $extra,
         #[AutowireIterator(PathLocalizerInterface::TAG)]
         private readonly iterable $localizers = [],
+        #[Autowire(param: WexampleSymfonySeoExtension::PARAMETER_ROBOTS_DISALLOW_QUERY)]
+        private readonly bool $disallowQuery = false,
     ) {
     }
 
@@ -53,8 +58,16 @@ class RobotsService
         }
 
         $sections = [];
+        $groups = $this->collectGroups();
 
-        foreach ($this->collectGroups() as $group) {
+        // A pattern, not a path: no language prefix to put in front of it.
+        if ($this->disallowQuery) {
+            $all = strtolower(RobotsRule::USER_AGENT_ALL);
+            $groups[$all] ??= ['userAgent' => RobotsRule::USER_AGENT_ALL, 'allow' => [], 'disallow' => []];
+            $groups[$all]['disallow'][] = self::QUERY_PATTERN;
+        }
+
+        foreach ($groups as $group) {
             $sections[] = $this->renderGroup($group['userAgent'], $group['allow'], $group['disallow']);
         }
 

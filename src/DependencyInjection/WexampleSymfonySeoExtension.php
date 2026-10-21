@@ -15,6 +15,7 @@ class WexampleSymfonySeoExtension extends AbstractWexampleSymfonyExtension
 {
     public const string PARAMETER_ROBOTS_ENABLED = 'wexample_symfony_seo.robots.enabled';
     public const string PARAMETER_ROBOTS_DISALLOW_ALL = 'wexample_symfony_seo.robots.disallow_all';
+    public const string PARAMETER_ROBOTS_DISALLOW_QUERY = 'wexample_symfony_seo.robots.disallow_query';
     public const string PARAMETER_ROBOTS_SITEMAPS = 'wexample_symfony_seo.robots.sitemaps';
     public const string PARAMETER_ROBOTS_EXTRA = 'wexample_symfony_seo.robots.extra';
     public const string PARAMETER_OPEN_GRAPH_ENABLED = 'wexample_symfony_seo.open_graph.enabled';
@@ -64,6 +65,7 @@ class WexampleSymfonySeoExtension extends AbstractWexampleSymfonyExtension
 
         $container->setParameter(self::PARAMETER_ROBOTS_ENABLED, $config['robots']['enabled']);
         $container->setParameter(self::PARAMETER_ROBOTS_DISALLOW_ALL, $config['robots']['disallow_all']);
+        $container->setParameter(self::PARAMETER_ROBOTS_DISALLOW_QUERY, $config['robots']['disallow_query']);
         $container->setParameter(self::PARAMETER_ROBOTS_SITEMAPS, $config['robots']['sitemaps']);
         $container->setParameter(self::PARAMETER_ROBOTS_EXTRA, $config['robots']['extra']);
 

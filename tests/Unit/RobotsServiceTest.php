@@ -104,12 +104,26 @@ class RobotsServiceTest extends TestCase
         $this->assertFalse($service->isDisallowed('/tunnel/step'));
     }
 
+    public function testAnAddressWithAQueryIsKeptAwayFromEveryLanguage(): void
+    {
+        $this->assertSame(
+            "User-agent: *\nDisallow: /tunnel/\nDisallow: /*?\n",
+            $this->createService([new TunnelRobotsProvider()], disallowQuery: true)->buildBody()
+        );
+        // Alone, it still opens its block.
+        $this->assertSame(
+            "User-agent: *\nDisallow: /*?\n",
+            $this->createService([], disallowQuery: true)->buildBody()
+        );
+    }
+
     private function createService(
         array $providers,
         bool $disallowAll = false,
         array $sitemaps = [],
         string $extra = '',
         array $localizers = [],
+        bool $disallowQuery = false,
     ): RobotsService {
         return new RobotsService(
             providers: $providers,
@@ -118,6 +132,7 @@ class RobotsServiceTest extends TestCase
             sitemaps: $sitemaps,
             extra: $extra,
             localizers: $localizers,
+            disallowQuery: $disallowQuery,
         );
     }
 }

@@ -49,6 +49,7 @@ wexample_symfony_seo:
   robots:
     enabled: true          # false: the route answers 404
     disallow_all: false    # true: the whole body becomes `User-agent: *` / `Disallow: /`
+    disallow_query: true   # `Disallow: /*?` for every user-agent
     sitemaps:
       - 'https://example.com/sitemap.xml'
     extra: |
@@ -56,6 +57,7 @@ wexample_symfony_seo:
 ```
 
 - `disallow_all` is meant for staging environments, which get indexed because nobody thought of them, and for apps behind a sign-in. It overrides providers, `extra` and `sitemaps` alike; set it in `config/packages/<env>/` rather than deploying a different file per environment. It also adds `<meta name="robots" content="noindex, nofollow">` to every page's head (see below).
+- `disallow_query`, on by default, keeps the crawlers off every address with a query. Such an address is a variant of a page whose canonical is the address without it — a table sorted, filtered, paged —, and crawled they multiply without end: every column, every filter, every language. A site lost 100,000 requests a day to GPTBot reading one demo table that way. The pattern is written once, without a language prefix; Google, Bing and the AI crawlers read the wildcard. Turn it off for a site whose query addresses are pages of their own.
 - `extra` is written as is after the user-agent blocks.
 - `sitemaps` are global lines, tied to no user-agent, and close the file.
 

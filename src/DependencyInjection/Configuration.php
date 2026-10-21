@@ -27,6 +27,14 @@ class Configuration implements ConfigurationInterface
                         ->booleanNode('disallow_all')
                             ->defaultFalse()
                         ->end()
+                        // An address with a query is a variant of a page whose
+                        // canonical is the address without it: a table sorted,
+                        // filtered, paged. Crawled, they multiply without end —
+                        // every column, every filter, every language. `Disallow:
+                        // /*?` keeps the crawlers on the pages themselves.
+                        ->booleanNode('disallow_query')
+                            ->defaultTrue()
+                        ->end()
                         ->arrayNode('sitemaps')
                             ->scalarPrototype()->end()
                         ->end()
