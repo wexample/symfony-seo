@@ -1,7 +1,7 @@
 {
   "name": "wexample/symfony-seo",
   "description": "Search engine facing endpoints for Symfony, composed by the installed bundles",
-  "version": "10.0.0",
+  "version": "11.0.0",
   "type": "library",
   "license": "MIT",
   "autoload": {
