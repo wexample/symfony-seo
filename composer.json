@@ -1,7 +1,7 @@
 {
   "name": "wexample/symfony-seo",
   "description": "Search engine facing endpoints for Symfony, composed by the installed bundles",
-  "version": "11.0.3",
+  "version": "11.0.4",
   "type": "library",
   "license": "MIT",
   "autoload": {
@@ -23,7 +23,7 @@
   "require": {
     "php": ">=8.5",
     "wexample/php-schema-org": ">=1.1.0",
-    "wexample/symfony-helpers": ">=19.1.0"
+    "wexample/symfony-helpers": ">=19.2.0"
   },
   "require-dev": {
     "phpunit/phpunit": "^13",
