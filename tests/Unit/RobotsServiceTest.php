@@ -4,6 +4,8 @@ namespace Wexample\SymfonySeo\Tests\Unit;
 
 use PHPUnit\Framework\TestCase;
 use Wexample\SymfonyHelpers\Interface\PathLocalizerInterface;
+use Wexample\SymfonySeo\Class\RobotsRule;
+use Wexample\SymfonySeo\Interface\RobotsProviderInterface;
 use Wexample\SymfonySeo\Service\RobotsService;
 use Wexample\SymfonySeo\Tests\Fixtures\Robots\PrivateRobotsProvider;
 use Wexample\SymfonySeo\Tests\Fixtures\Robots\SilentRobotsProvider;
@@ -82,6 +84,58 @@ class RobotsServiceTest extends TestCase
         $this->assertFalse($service->isDisallowed('/elsewhere'));
         // Another user-agent's rules are not every crawler's.
         $this->assertFalse($service->isDisallowed('/no-google/page'));
+    }
+
+    public function testTheLongerRuleWinsWhicheverItIs(): void
+    {
+        $provider = new class () implements RobotsProviderInterface {
+            public function getRobotsRules(): array
+            {
+                return [
+                    new RobotsRule(disallow: ['/a/b/c/', '/x/'], allow: ['/a/b/', '/x/']),
+                ];
+            }
+        };
+
+        $service = $this->createService([$provider]);
+
+        // A longer disallow under a shorter allow.
+        $this->assertTrue($service->isDisallowed('/a/b/c/page'));
+        $this->assertFalse($service->isDisallowed('/a/b/page'));
+        // The same prefix both allowed and disallowed: allowed, as Google reads it.
+        $this->assertFalse($service->isDisallowed('/x/page'));
+    }
+
+    public function testNoRuleForEveryCrawlerDisallowsNothing(): void
+    {
+        $this->assertFalse($this->createService([new SilentRobotsProvider()])->isDisallowed('/private/page'));
+        $this->assertTrue($this->createService([new SilentRobotsProvider()], disallowAll: true)->isDisallowed('/anything'));
+    }
+
+    public function testTheProvidersAreReadOncePerRequest(): void
+    {
+        $provider = new class () implements RobotsProviderInterface {
+            public int $reads = 0;
+
+            public function getRobotsRules(): array
+            {
+                ++$this->reads;
+
+                return [new RobotsRule(disallow: ['/private/'])];
+            }
+        };
+
+        $service = $this->createService([$provider]);
+
+        $service->isDisallowed('/private/a');
+        $service->isDisallowed('/private/b');
+        $service->buildBody();
+        $this->assertSame(1, $provider->reads);
+
+        // The next request reads them again.
+        $service->reset();
+        $service->isDisallowed('/private/a');
+        $this->assertSame(2, $provider->reads);
     }
 
     public function testRulesFollowThePathsTheAppActuallyServes(): void

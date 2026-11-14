@@ -4,17 +4,29 @@ namespace Wexample\SymfonySeo\Service;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
+use Symfony\Contracts\Service\ResetInterface;
 use Wexample\SymfonyHelpers\Interface\PathLocalizerInterface;
 use Wexample\SymfonySeo\Class\RobotsRule;
 use Wexample\SymfonySeo\DependencyInjection\WexampleSymfonySeoExtension;
 use Wexample\SymfonySeo\Interface\RobotsProviderInterface;
 
-class RobotsService
+class RobotsService implements ResetInterface
 {
     final public const string TAG_PROVIDER = 'wexample_symfony_seo.robots_provider';
 
     /** Every address with a query, in the wildcard Google, Bing and the AI crawlers read. */
     final public const string QUERY_PATTERN = '/*?';
+
+    /**
+     * The providers' rules, grouped and localized, read once per request: the
+     * sitemap asks `isDisallowed()` for every address it lists, and each
+     * reading walks every provider and every localizer. Emptied by `reset()`,
+     * the rules being the providers' and not known to stay the same from one
+     * request to the next.
+     *
+     * @var array<string, array{userAgent: string, allow: string[], disallow: string[]}>|null
+     */
+    private ?array $groups = null;
 
     /**
      * @param iterable<RobotsProviderInterface> $providers
@@ -40,6 +52,11 @@ class RobotsService
         #[Autowire(param: WexampleSymfonySeoExtension::PARAMETER_ROBOTS_DISALLOW_QUERY)]
         private readonly bool $disallowQuery = false,
     ) {
+    }
+
+    public function reset(): void
+    {
+        $this->groups = null;
     }
 
     public function isEnabled(): bool
@@ -120,6 +137,14 @@ class RobotsService
      * @return array<string, array{userAgent: string, allow: string[], disallow: string[]}>
      */
     private function collectGroups(): array
+    {
+        return $this->groups ??= $this->readGroups();
+    }
+
+    /**
+     * @return array<string, array{userAgent: string, allow: string[], disallow: string[]}>
+     */
+    private function readGroups(): array
     {
         $groups = [];
 
