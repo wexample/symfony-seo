@@ -18,7 +18,7 @@ class SitemapServiceTest extends TestCase
     /**
      * @param SitemapProviderInterface[] $providers
      */
-    private function createService(?AccessMap $accessMap, array $providers = []): SitemapService
+    private function createService(?AccessMap $accessMap, array $providers = [], int $maxUrls = 50000): SitemapService
     {
         $routes = new RouteCollection();
         $routes->add('open', new Route('/open'));
@@ -44,7 +44,8 @@ class SitemapServiceTest extends TestCase
             true,
             [],
             $accessMap,
-            $providers
+            $providers,
+            $maxUrls
         );
     }
 
@@ -96,5 +97,31 @@ class SitemapServiceTest extends TestCase
             array_map(static fn ($entry): string => $entry->url, $entries)
         );
         $this->assertSame('http://localhost/en/articles/hello', $entries[1]->alternates['x-default']);
+    }
+
+    public function testPagesBeyondWhatAFileListsAreSplitIntoFiles(): void
+    {
+        $service = $this->createService(null, [], 2);
+        $entries = $service->getEntries();
+
+        $this->assertTrue($service->isSplit($entries));
+        $this->assertSame(2, $service->getFileCount($entries));
+        $this->assertSame(
+            ['http://localhost/open', 'http://localhost/closed'],
+            array_map(static fn ($entry): string => $entry->url, $service->getFileEntries($entries, 1))
+        );
+        $this->assertSame(
+            ['http://localhost/public'],
+            array_map(static fn ($entry): string => $entry->url, $service->getFileEntries($entries, 2))
+        );
+    }
+
+    public function testPagesAFileHoldsAreNotSplit(): void
+    {
+        $service = $this->createService(null);
+        $entries = $service->getEntries();
+
+        $this->assertFalse($service->isSplit($entries));
+        $this->assertSame(1, $service->getFileCount($entries));
     }
 }

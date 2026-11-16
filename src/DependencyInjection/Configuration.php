@@ -76,6 +76,13 @@ class Configuration implements ConfigurationInterface
                         ->arrayNode('exclude')
                             ->scalarPrototype()->end()
                         ->end()
+                        // The most a sitemap file lists, 50,000 by the protocol:
+                        // beyond, /sitemap.xml becomes an index of /sitemap-N.xml.
+                        ->integerNode('max_urls')
+                            ->defaultValue(50000)
+                            ->min(1)
+                            ->max(50000)
+                        ->end()
                     ->end()
                 ->end()
                 // What the engines are told of the site in schema.org's words, on

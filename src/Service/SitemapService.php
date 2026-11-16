@@ -52,12 +52,45 @@ class SitemapService
         private readonly ?object $accessMap = null,
         #[AutowireIterator(self::TAG_PROVIDER)]
         private readonly iterable $providers = [],
+        #[Autowire(param: WexampleSymfonySeoExtension::PARAMETER_SITEMAP_MAX_URLS)]
+        private readonly int $maxUrls = 50000,
     ) {
     }
 
     public function isEnabled(): bool
     {
         return $this->enabled;
+    }
+
+    /**
+     * Whether the pages exceed what one file may list: /sitemap.xml is then an
+     * index of the files holding them.
+     *
+     * @param SitemapEntry[] $entries
+     */
+    public function isSplit(array $entries): bool
+    {
+        return count($entries) > $this->maxUrls;
+    }
+
+    /**
+     * @param SitemapEntry[] $entries
+     */
+    public function getFileCount(array $entries): int
+    {
+        return max(1, (int) ceil(count($entries) / $this->maxUrls));
+    }
+
+    /**
+     * The entries one file lists, from 1.
+     *
+     * @param SitemapEntry[] $entries
+     *
+     * @return SitemapEntry[]
+     */
+    public function getFileEntries(array $entries, int $file): array
+    {
+        return array_slice($entries, ($file - 1) * $this->maxUrls, $this->maxUrls);
     }
 
     /**

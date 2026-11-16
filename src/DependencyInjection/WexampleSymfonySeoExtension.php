@@ -23,6 +23,7 @@ class WexampleSymfonySeoExtension extends AbstractWexampleSymfonyExtension
     public const string PARAMETER_OPEN_GRAPH_SITE_NAME = 'wexample_symfony_seo.open_graph.site_name';
     public const string PARAMETER_SITEMAP_ENABLED = 'wexample_symfony_seo.sitemap.enabled';
     public const string PARAMETER_SITEMAP_EXCLUDE = 'wexample_symfony_seo.sitemap.exclude';
+    public const string PARAMETER_SITEMAP_MAX_URLS = 'wexample_symfony_seo.sitemap.max_urls';
     public const string PARAMETER_FAVICON_ENABLED = 'wexample_symfony_seo.favicon.enabled';
     public const string PARAMETER_FAVICON_PATH = 'wexample_symfony_seo.favicon.path';
     public const string PARAMETER_REDIRECT_HOSTS = 'wexample_symfony_seo.redirect_hosts';
@@ -75,6 +76,7 @@ class WexampleSymfonySeoExtension extends AbstractWexampleSymfonyExtension
 
         $container->setParameter(self::PARAMETER_SITEMAP_ENABLED, $config['sitemap']['enabled']);
         $container->setParameter(self::PARAMETER_SITEMAP_EXCLUDE, $config['sitemap']['exclude']);
+        $container->setParameter(self::PARAMETER_SITEMAP_MAX_URLS, $config['sitemap']['max_urls']);
 
         $container->setParameter(self::PARAMETER_REDIRECT_HOSTS, $config['redirect_hosts']);
         $container->setParameter(self::PARAMETER_STRUCTURED_DATA, $config['structured_data']);
