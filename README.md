@@ -1,6 +1,6 @@
 # symfony-seo
 
-Version: 13.0.0
+Version: 14.0.0
 
 Search engine facing endpoints for Symfony, composed by the installed bundles
 

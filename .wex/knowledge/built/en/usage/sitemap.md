@@ -35,3 +35,15 @@ class ArticleSitemapProvider implements SitemapProviderInterface
 ```
 
 `SitemapRoute` takes the route name and its parameters, the language left out: the sitemap fills in each one the route offers, adds the alternates, and applies the same exclusions as for the other pages. Choosing which records have a page — published ones, not drafts — is the provider's call: the sitemap cannot tell a draft from a page that answers.
+
+## More pages than one file holds
+
+A sitemap file lists 50,000 urls at most. Past that, `/sitemap.xml` becomes a `<sitemapindex>` of `/sitemap-1.xml`, `/sitemap-2.xml`…, each holding the next 50,000, in the order the pages were listed. A file past the last, or any of them while the sitemap fits in one, is a 404. A lower limit — to keep each file light — is set by the app:
+
+```yaml
+wexample_symfony_seo:
+  sitemap:
+    max_urls: 10000
+```
+
+Under `symfony-translations`' locale routing, these files keep their url like `/sitemap.xml`: no language in front.
